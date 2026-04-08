@@ -51,7 +51,7 @@ func (s *service) GetRoute(ctx context.Context, pickup, destination *types.Coord
 	}
 
 	var routeResponse types.OsrmApiResponse
-	if err := json.Unmarshal(body, &routeResponse.Routes); err != nil {
+	if err := json.Unmarshal(body, &routeResponse); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %v", err)
 	}
 

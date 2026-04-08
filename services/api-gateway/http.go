@@ -17,12 +17,13 @@ func handleTripPreview(w http.ResponseWriter, r *http.Request) {
 	var reqBody previewTripRequest
 
 	err := json.NewDecoder(r.Body).Decode(&reqBody)
-	defer r.Body.Close()
-
 	if err != nil {
 		http.Error(w, "failed to parse json data", http.StatusBadRequest)
+		log.Println("Error @ api-gatway")
 		return
 	}
+
+	defer r.Body.Close()
 
 	if reqBody.UserId == "" {
 		http.Error(w, "UserId is required", http.StatusBadRequest)
