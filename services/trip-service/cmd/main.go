@@ -1,33 +1,34 @@
 package main
 
 import (
-	"context"
-	"gofer/services/trip-service/internal/domain"
+	internalHTTP "gofer/services/trip-service/internal/infrastructure/http"
 	"gofer/services/trip-service/internal/infrastructure/repository"
 	"gofer/services/trip-service/internal/service"
 	"log"
-	"time"
+	"net/http"
 )
 
 func main() {
-	ctx := context.Background()
-	sampel_fare := domain.RideFareModel{
-		UserID: "17",
+	mux := http.NewServeMux()
+
+	// Respository
+	inmemoryRepository := repository.NewInmemeoryRespository()
+
+	// Service
+	svc := service.NewService(inmemoryRepository)
+
+	httphandler := internalHTTP.HttpHandler{
+		Service: svc,
 	}
 
-	inmemory := repository.NewInmemeoryRespository()
+	mux.HandleFunc("POST /preview", httphandler.HandleTripPreview)
 
-	svc := service.NewService(inmemory)
-	res, err := svc.CreateTrip(ctx, &sampel_fare)
-
-	if err != nil{
-		log.Fatal(err)
+	server := &http.Server{
+		Addr:    ":8083",
+		Handler: mux,
 	}
 
-	log.Println(res)
-
-	// temporarily keeping server up (never do this in real world application - only for quick test)
-	for {
-		time.Sleep(time.Second * 1)
+	if err := server.ListenAndServe(); err != nil {
+		log.Printf("HTTP server error: %v", err)
 	}
 }
