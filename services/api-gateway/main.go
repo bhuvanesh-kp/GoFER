@@ -52,4 +52,6 @@ func main() {
 			server.Close()
 		}
 	}
+
+	// TODO: after finishing project added request based graceful shutdown rather than fixed value shutdown
 }
