@@ -4,6 +4,9 @@ import Image from 'next/image';
 import { useRiderStreamConnection } from '../hooks/useRiderStreamConnection';
 import { MapContainer, Marker, Popup, Rectangle, TileLayer } from 'react-leaflet'
 import L from 'leaflet';
+import carIcon from '../assets/Car.svg';
+import pinIcon from 'leaflet/dist/images/marker-icon.png';
+import pinShadow from 'leaflet/dist/images/marker-shadow.png';
 import { getGeohashBounds } from '../utils/geohash';
 import { useMemo, useRef, useState } from 'react';
 import { MapClickHandler } from './MapClickHandler';
@@ -15,13 +18,14 @@ import { RiderTripOverview } from './RiderTripOverview';
 import { BackendEndpoints, HTTPTripPreviewRequestPayload, HTTPTripPreviewResponse, HTTPTripStartRequestPayload } from '../contracts';
 
 const userMarker = new L.Icon({
-    iconUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/Map_pin_icon.svg/176px-Map_pin_icon.svg.png",
-    iconSize: [40, 40], // Size of the marker
-    iconAnchor: [20, 40], // Anchor point
+    iconUrl: pinIcon.src,
+    shadowUrl: pinShadow.src,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
 });
 
 const driverMarker = new L.Icon({
-    iconUrl: "https://www.svgrepo.com/show/25407/car.svg",
+    iconUrl: carIcon.src,
     iconSize: [30, 30],
     iconAnchor: [15, 30],
 });
@@ -39,8 +43,8 @@ export default function RiderMap({ onRouteSelected }: RiderMapProps) {
     const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const location = {
-        latitude: 37.7749,
-        longitude: -122.4194,
+        latitude: 12.9165,
+        longitude: 79.1325,
     };
 
     const {
