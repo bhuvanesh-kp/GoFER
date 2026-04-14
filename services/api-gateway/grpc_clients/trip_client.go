@@ -1,8 +1,8 @@
 package grpc_clients
 
 import (
-	"os"
 	pb "gofer/shared/proto/trip"
+	"os"
 
 	"google.golang.org/grpc"
 )
