@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"gofer/services/trip-service/internal/domain"
 )
 
@@ -15,6 +16,15 @@ func NewInmemeoryRespository() *inmemoryRepository {
 		trips:     make(map[string]*domain.TripModel),
 		rideFares: make(map[string]*domain.RideFareModel),
 	}
+}
+
+func (r *inmemoryRepository) GetRideFareByID(ctx context.Context, id string) (*domain.RideFareModel, error) {
+	fare, exist := r.rideFares[id]
+	if !exist {
+		return nil, fmt.Errorf("fare does not exist with ID: %s", id)
+	}
+
+	return fare, nil
 }
 
 func (r *inmemoryRepository) CreateTrip(ctx context.Context, trip *domain.TripModel) (*domain.TripModel, error) {

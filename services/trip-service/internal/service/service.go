@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"gofer/services/trip-service/internal/domain"
+	"gofer/shared/proto/trip"
 	"gofer/shared/types"
 	"io"
+	"log"
 	"net/http"
 
 	tripTypes "gofer/services/trip-service/pkg/types"
@@ -30,6 +32,7 @@ func (s *service) CreateTrip(ctx context.Context, fare *domain.RideFareModel) (*
 		UserID:   fare.UserID,
 		Status:   "pending",
 		RideFare: fare,
+		Driver:   &trip.TripDriver{},
 	}
 	return s.repo.CreateTrip(ctx, trip)
 }
@@ -40,6 +43,8 @@ func (s *service) GetRoute(ctx context.Context, pickup, destination *types.Coord
 		pickup.Longitude, pickup.Latitude,
 		destination.Longitude, destination.Latitude,
 	)
+
+	log.Printf("Fetching from OSRM API: URL: %s", url)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -52,12 +57,31 @@ func (s *service) GetRoute(ctx context.Context, pickup, destination *types.Coord
 		return nil, fmt.Errorf("failed to read the response: %v", err)
 	}
 
+	log.Printf("GOT RESPONSE FROM API %s", string(body))
+
 	var routeResponse tripTypes.OsrmApiResponse
 	if err := json.Unmarshal(body, &routeResponse); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %v", err)
 	}
 
 	return &routeResponse, nil
+}
+
+func (s *service) GetAndValidateFare(ctx context.Context, fareID, userID string) (*domain.RideFareModel, error) {
+	fare, err := s.repo.GetRideFareByID(ctx, fareID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get trip fare: %w", err)
+	}
+
+	if fare == nil {
+		return nil, fmt.Errorf("fare does not exist")
+	}
+
+	if userID != fare.UserID {
+		return nil, fmt.Errorf("fare does not belong to the user")
+	}
+
+	return fare, nil
 }
 
 func (s *service) EstimatePackagesPriceWithRoute(route *tripTypes.OsrmApiResponse) []*domain.RideFareModel {
