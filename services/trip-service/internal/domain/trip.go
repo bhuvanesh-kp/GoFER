@@ -4,8 +4,9 @@ import (
 	"context"
 	"gofer/shared/types"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	tripTypes "gofer/services/trip-service/pkg/types"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type TripModel struct {
@@ -17,9 +18,12 @@ type TripModel struct {
 
 type TripRepository interface {
 	CreateTrip(ctx context.Context, trip *TripModel) (*TripModel, error)
+	SaveRideFare(ctx context.Context, fare *RideFareModel) error
 }
 
 type TripService interface {
 	CreateTrip(ctx context.Context, fare *RideFareModel) (*TripModel, error)
 	GetRoute(ctx context.Context, pickup, destination *types.Coordinate) (*tripTypes.OsrmApiResponse, error)
+	EstimatePackagesPriceWithRoute(route *tripTypes.OsrmApiResponse) []*RideFareModel
+	GenerateTripFares(ctx context.Context, fares []*RideFareModel, userID string) ([]*RideFareModel, error)
 }
