@@ -2,61 +2,53 @@ package main
 
 import (
 	"context"
-	internalHTTP "gofer/services/trip-service/internal/infrastructure/http"
+	"gofer/services/trip-service/internal/infrastructure/grpc"
 	"gofer/services/trip-service/internal/infrastructure/repository"
 	"gofer/services/trip-service/internal/service"
 	"log"
-	"net/http"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
+
+	grpcserver "google.golang.org/grpc"
 )
 
+var GrpcAddr = ":9093"
+
 func main() {
-	mux := http.NewServeMux()
+	inmemRepo := repository.NewInmemeoryRespository()
+	svc := service.NewService(inmemRepo)
 
-	// Respository
-	inmemoryRepository := repository.NewInmemeoryRespository()
-
-	// Service
-	svc := service.NewService(inmemoryRepository)
-
-	httphandler := internalHTTP.HttpHandler{
-		Service: svc,
-	}
-
-	mux.HandleFunc("POST /preview", httphandler.HandleTripPreview)
-
-	server := &http.Server{
-		Addr:    ":8083",
-		Handler: mux,
-	}
-
-	serverError := make(chan error, 1)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	go func() {
-		log.Printf("Server listening on %s", server.Addr)
-		serverError <- server.ListenAndServe()
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+		<-sigCh
+		cancel()
 	}()
 
-	shutDown := make(chan os.Signal, 1)
-	signal.Notify(shutDown, os.Interrupt, syscall.SIGTERM)
-
-	select {
-	case err := <-serverError:
-		log.Printf("Error starting the server: %v", err)
-	case sig := <-shutDown:
-		log.Printf("Server is shutting down due to %v signal", sig)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		if err := server.Shutdown(ctx); err != nil {
-			log.Printf("Could not stop the server gracefully: %v", err)
-			server.Close()
-		}
+	lis, err := net.Listen("tcp", GrpcAddr)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
 	}
 
+	grpcServer := grpcserver.NewServer()
+	grpc.NewGRPCHandler(grpcServer, svc)
+	
+	log.Printf("Starting gRPC server Trip service on port %s", lis.Addr().String())
+
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Printf("failed to serve: %v", err)
+			cancel()
+		}
+	}()
+
+	<-ctx.Done()
+	log.Println("Shutting down the server...")
+	grpcServer.GracefulStop()
 	// TODO: after finishing project added request based graceful shutdown rather than fixed value shutdown
 }
