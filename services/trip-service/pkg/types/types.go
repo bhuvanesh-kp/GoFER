@@ -13,13 +13,16 @@ type OsrmApiResponse struct {
 }
 
 func (o *OsrmApiResponse) ToProto() *pb.Route {
+	if len(o.Routes) == 0 {
+		return &pb.Route{Geometry: []*pb.Geometry{{Coordinates: []*pb.Coordinate{}}}}
+	}
 	route := o.Routes[0]
 	geometry := route.Geometry.Coordinates
 	coordinates := make([]*pb.Coordinate, len(geometry))
 	for i, coord := range geometry {
 		coordinates[i] = &pb.Coordinate{
-			Latitude:  coord[0],
-			Longitude: coord[1],
+			Longitude: coord[0],
+			Latitude:  coord[1],
 		}
 	}
 

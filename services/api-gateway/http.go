@@ -32,14 +32,17 @@ func handleTripPreview(w http.ResponseWriter, r *http.Request) {
 
 	tripService, err := grpc_clients.NewTripServiceClient()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("failed to create trip service client: %v", err)
+		http.Error(w, "trip service unavailable", http.StatusServiceUnavailable)
+		return
 	}
 
 	defer tripService.Close()
 
 	tripPreview, err := tripService.Client.PreviewTrip(r.Context(), reqBody.toProto())
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("PreviewTrip failed: %v", err)
+		http.Error(w, "failed to preview trip", http.StatusBadGateway)
 		return
 	}
 
