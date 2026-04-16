@@ -8,6 +8,34 @@ import (
 	"net/http"
 )
 
+func handleTripStart(w http.ResponseWriter, r *http.Request) {
+	var reqBody startTripPreview
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "failed to parse JSON data", http.StatusBadRequest)
+		return
+	}
+
+	defer r.Body.Close()
+
+	tripService, err := grpc_clients.NewTripServiceClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer tripService.Close()
+
+	trip, err := tripService.Client.CreateTrip(r.Context(), reqBody.toProto())
+	if err != nil {
+		log.Printf("Failed to start a trip: %v", err)
+		http.Error(w, "Failed to start trip", http.StatusInternalServerError)
+		return
+	}
+
+	response := contracts.APIResponse{Data: trip}
+
+	writeJSON(w, http.StatusCreated, response)
+}
+
 func handleTripPreview(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid Request", http.StatusBadGateway)

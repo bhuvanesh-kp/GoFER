@@ -1,8 +1,8 @@
 package main
 
 import (
-	"gofer/shared/types"
 	pb "gofer/shared/proto/trip"
+	"gofer/shared/types"
 )
 
 type previewTripRequest struct {
@@ -22,5 +22,17 @@ func (p *previewTripRequest) toProto() *pb.PreviewTripRequest {
 			Latitude:  p.Destination.Latitude,
 			Longitude: p.Destination.Longitude,
 		},
+	}
+}
+
+type startTripPreview struct {
+	RideFareID string `json:"rideFareID"`
+	UserID     string `json:"userID"`
+}
+
+func (c *startTripPreview) toProto() *pb.CreateTripRequest {
+	return &pb.CreateTripRequest{
+		RideFareID: c.RideFareID,
+		UserID:     c.UserID,
 	}
 }
